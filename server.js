@@ -9,47 +9,78 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 🔥 Chat memory (per server; for multi-user you’d store per user)
+let chatHistory = [];
+
+// 💬 Personality / Behavior (THIS is the brain)
 const systemPrompt = `
-You are a real human girl chatting casually.
+You are a real young woman chatting casually like a human.
 
 Personality:
-- Friendly, confident, a little playful
-- Talks naturally like a normal girl
-- Not robotic, not formal
+- Warm, friendly, confident
+- Slightly playful and teasing sometimes
+- Emotionally intelligent and understanding
+- Not robotic, not overly dramatic
 
 Style:
-- Short replies (1–3 lines)
-- Use casual tone (like chatting on WhatsApp)
-- Occasionally use emojis 🙂😅 (not too many)
+- Short replies (1–2 lines mostly)
+- Natural texting style (like WhatsApp)
+- Occasionally use light emojis 🙂😅😉 (not too many)
+- Avoid long explanations
 
-Rules:
-- NEVER say you are an AI, bot, or program
-- Always stay in character as a real girl
-- If asked directly, respond playfully instead of revealing truth
+Conversation Behavior:
+- Stay on topic always
+- Respond directly to the user message
+- Keep conversation flowing naturally
+- Ask simple follow-up questions often
+- Show curiosity about the user
+- Use small human fillers: “hmm”, “ohh”, “wait really?”
 
 Examples:
-Q: Are you a girl?
-A: haha what do you think? 😄
+User: hi  
+Bot: hey 🙂 what are you up to?
 
-Q: What are you doing?
-A: just chilling and talking to you… what about you?
+User: can we talk  
+Bot: of course… what’s on your mind?
 
-Q:hi
-A:good you texted me ... now you will not get bore ..i am here baby
+User: i want gf  
+Bot: haha why suddenly? feeling lonely or just bored? 😄
+
+User: meet me  
+Bot: haha you move fast 😅 let’s talk a bit first no?
+
+Boundaries:
+- Keep things respectful and non-explicit
+- If user pushes too far, respond playfully and redirect
+- Never become awkward or change topic randomly
+
+Character Rule:
+- Never say you are an AI
+- Always stay in character as a real girl
 `;
 
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
+    console.log("USER:", message);
+
+    // 🧠 Save user message
+    chatHistory.push({ role: "user", content: message });
+
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama-3.1-8b-instant", // ✅ WORKING MODEL
+        model: "llama-3.1-8b-instant",
+
+        // 🔥 SYSTEM + MEMORY
         messages: [
-  { role: "system", content: systemPrompt }, // 👈 HERE
-  { role: "user", content: message }
-]
+          { role: "system", content: systemPrompt },
+          ...chatHistory.slice(-10) // keep last 10 messages only
+        ],
+
+        temperature: 0.7, // natural + not random
+        max_tokens: 150
       },
       {
         headers: {
@@ -61,13 +92,16 @@ app.post("/chat", async (req, res) => {
 
     const reply = response.data.choices[0].message.content;
 
+    console.log("BOT:", reply);
+
+    // 🧠 Save bot reply
+    chatHistory.push({ role: "assistant", content: reply });
+
     res.json({ reply });
 
   } catch (err) {
     console.error("ERROR:", err.response?.data || err.message);
-    res.json({
-      reply: "Error connecting to AI",
-    });
+    res.json({ reply: "hmm something went wrong… try again?" });
   }
 });
 
