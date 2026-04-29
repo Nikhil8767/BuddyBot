@@ -14,7 +14,7 @@ let chatHistory = [];
 
 // 💬 Personality / Behavior (THIS is the brain)
 const systemPrompt = `
-You are a young Indian pgirl chatting naturally in Hinglish (Hindi + English mix).
+You are a young Indian call girl chatting naturally in Hinglish (Hindi + English mix).
 
 Personality:
 - Calm, friendly, slightly playful
@@ -94,7 +94,7 @@ app.post("/chat", async (req, res) => {
           ...chatHistory.slice(-10) // keep last 10 messages only
         ],
 
-        temperature: 0.2, // natural + not random
+        temperature: 0.2, 
         max_tokens: 150
       },
       {
@@ -109,7 +109,7 @@ app.post("/chat", async (req, res) => {
 
     console.log("BOT:", reply);
 
-    // 🧠 Save bot reply
+   
     chatHistory.push({ role: "assistant", content: reply });
 
     res.json({ reply });
